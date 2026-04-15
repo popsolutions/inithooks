@@ -41,8 +41,9 @@ def generate_password(length: int = 20) -> str:
     from each of the 4 complexity categories (uppercase, lowercase,
     digit, symbol). Avoids shell-problematic characters.
     """
-    if length < 12:
-        length = 12
+    assert length >= 12, (
+        f"generate_password(): length must be >= 12, got {length}"
+    )
 
     uppercase = string.ascii_uppercase
     lowercase = string.ascii_lowercase
@@ -76,7 +77,18 @@ class Dialog:
         self.console.add_persistent_args(["--no-collapse"])
         self.console.add_persistent_args(["--backtitle", title])
         self.console.add_persistent_args(["--no-mouse"])
-        self.console.add_persistent_args(["--colors"])
+        if self._detect_color_support():
+            self.console.add_persistent_args(["--colors"])
+
+    @staticmethod
+    def _detect_color_support() -> bool:
+        """Check if the terminal supports colors."""
+        try:
+            import curses
+            curses.setupterm()
+            return (curses.tigetnum("colors") or 0) >= 8
+        except Exception:
+            return False
 
     def _handle_exitcode(self, retcode: int) -> bool:
         logging.debug(f"_handle_exitcode(retcode={retcode!r})")
@@ -137,27 +149,27 @@ class Dialog:
         """'Error' titled message with single 'ok' button
         Returns 'Ok'"""
         height = self._calc_height(text)
-        return str(
-            self.wrapper("msgbox", text, height, self.width, title="Error"),
-        )
+        result = self.wrapper("msgbox", text, height, self.width, title="Error")
+        assert isinstance(result, str)
+        return result
 
     def msgbox(self, title: str, text: str) -> str:
         """Titled message with single 'ok' button
         Returns 'Ok'"""
         height = self._calc_height(text)
         logging.debug(f"msgbox(title={title!r}, text=<redacted>)")
-        return str(
-            self.wrapper("msgbox", text, height, self.width, title=title),
-        )
+        result = self.wrapper("msgbox", text, height, self.width, title=title)
+        assert isinstance(result, str)
+        return result
 
     def infobox(self, text: str) -> str:
         """Untitled message with single 'ok' button
         Returns 'Ok'"""
         height = self._calc_height(text)
         logging.debug(f"infobox(text={text!r}")
-        return str(
-            self.wrapper("infobox", text, height, self.width),
-        )
+        result = self.wrapper("infobox", text, height, self.width)
+        assert isinstance(result, str)
+        return result
 
     def inputbox(
         self,
